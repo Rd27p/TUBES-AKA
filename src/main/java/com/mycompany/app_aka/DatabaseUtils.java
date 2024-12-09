@@ -16,9 +16,9 @@ import java.util.List;
 public class DatabaseUtils {
 
     public static Connection connectDatabase() {
-        String url = "mysql://127.0.0.1:3306/AKASYSTEM";
+        String url = "mysql://localhost:3306/AKASYSTEM";
         String user = "root";
-        String password = "12345";
+        String password = "     ";
         try {
             return DriverManager.getConnection(url, user, password);
         } catch (SQLException e) {
