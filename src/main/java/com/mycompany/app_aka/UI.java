@@ -9,46 +9,91 @@ package com.mycompany.app_aka;
  * @author Raka Darma
  */
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.sql.Connection;
+import java.util.List;
 
 public class UI {
-    public static void main(String[] args) {
-        // Create the main frame
-        JFrame frame = new JFrame("Aplikasi AKA");
-        frame.setSize(300, 200);
+
+    private JFrame frame;
+    private JTable table;
+    private DefaultTableModel tableModel;
+    private List<GPU> gpuList;
+
+    public UI() {
+        initialize();
+    }
+
+    private void initialize() {
+        // Set up the main frame
+        frame = new JFrame("GPU Sorting");
+        frame.setSize(800, 500);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(null); // Using null layout for simplicity
+        frame.setLayout(new BorderLayout());
 
-        // Create a label
-        JLabel label = new JLabel("Nama: ");
-        label.setBounds(20, 20, 100, 25);
-        frame.add(label);
+        // Table for displaying GPU data
+        tableModel = new DefaultTableModel(new String[]{"Name", "Memory Size", "TMU"}, 0);
+        table = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(table);
 
-        // Create a text field
-        JTextField textField = new JTextField();
-        textField.setBounds(130, 20, 130, 25);
-        frame.add(textField);
+        // Buttons for actions
+        JButton loadButton = new JButton("Load Data");
+        JButton sortButton = new JButton("Sort by Memory Size");
 
-        // Create a button
-        JButton button = new JButton("Say Hello");
-        button.setBounds(90, 70, 120, 30);
-        frame.add(button);
+        // Panel for buttons
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(loadButton);
+        buttonPanel.add(sortButton);
 
-        // Create a label to display the message
-        JLabel messageLabel = new JLabel("");
-        messageLabel.setBounds(20, 110, 250, 25);
-        frame.add(messageLabel);
+        // Add components to the frame
+        frame.add(scrollPane, BorderLayout.CENTER);
+        frame.add(buttonPanel, BorderLayout.SOUTH);
 
-        // Add action listener for button
-        button.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String name = textField.getText();
-                messageLabel.setText("Hello, " + name + "!");
-            }
-        });
-        // Make the frame visible
+        // Button actions
+        loadButton.addActionListener(e -> loadData());
+        sortButton.addActionListener(e -> sortData());
+
         frame.setVisible(true);
+    }
+
+    private void loadData() {
+        Connection connection = DatabaseUtils.connectDatabase();
+        if (connection == null) {
+            JOptionPane.showMessageDialog(frame, "Failed to connect to the database!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        gpuList = DatabaseUtils.fetchGPUData(connection);
+        updateTable();
+
+        try {
+            connection.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sortData() {
+        if (gpuList == null || gpuList.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "No data to sort!", "Warning", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        SortingUtils.bubbleSort(gpuList);
+        updateTable();
+    }
+
+    private void updateTable() {
+        tableModel.setRowCount(0); // Clear existing rows
+        if (gpuList != null) {
+            for (GPU gpu : gpuList) {
+                tableModel.addRow(new Object[]{gpu.name, gpu.memSize, gpu.tmu});
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(UI::new);
     }
 }
